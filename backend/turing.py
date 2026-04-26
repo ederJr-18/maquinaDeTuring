@@ -1,173 +1,119 @@
+import time
 from datetime import datetime
-import pytz # Asegúrate de que pytz esté instalado (pip install pytz)
 
+# 1. TABLA DE TRANSICIONES MEJORADA
+# Representa el conocimiento de la máquina: "Si estoy en q0 y leo 'B', sigo buscando Bogota"
+tabla_turing = {
+    "BOGOTA": {"pais": "COLOMBIA", "offset": 0},
+    "MADRID": {"pais": "ESPAÑA", "offset": 6},
+    "TOKYO": {"pais": "JAPÓN", "offset": 14},
+    "LONDRES": {"pais": "INGLATERRA", "offset": 5},
+    "SIDNY": {"pais": "AUSTRALIA", "offset": 15}
+}
 
-proceso_mt_geotemporal = [
-  {
-    "paso": 1,
-    "estado": "q_inicio",
-    "lee": "Bogotá-Madrid",
-    "escribe": "16:00",
-    "accion": "Mover R",
-    "descripcion": "Calcula la hora local en el destino"
-  },
-  {
-    "paso": 2,
-    "estado": "q_verificar_periodo",
-    "lee": "16:00",
-    "escribe": "PM",
-    "accion": "Mover R",
-    "descripcion": "Determina si es AM o PM según la hora escrita"
-  },
-  {
-    "paso": 3,
-    "estado": "q_calculo_offset",
-    "lee": "Zona_05/Zona_02",
-    "escribe": "+7 Horas",
-    "accion": "Mover R",
-    "descripcion": "Calcula la diferencia entre meridianos"
-  },
-  {
-    "paso": 4,
-    "estado": "q_finalizar",
-    "lee": "Completo",
-    "escribe": "REPORT_READY",
-    "accion": "HALT",
-    "descripcion": "Finaliza la ejecución y genera salida"
-  }
-]
-def datosdeBogota(proceso_mt_geotemporal):
-  if proceso_mt_geotemporal < 12:
-    estadoDelDia = "Mañana"
-  elif proceso_mt_geotemporal >= 12 and proceso_mt_geotemporal < 18:
-    estadoDelDia = "Tarde"
-  else:
-    estadoDelDia = "Noche"
-
-
-  return {
-    "pais": "colombia",
-    "hora": proceso_mt_geotemporal,
-    "estado del dia": estadoDelDia,
-    "horas de diferencias": 0
-  }
-
-def datosdeMadrid(proceso_mt_geotemporal):
-  # Si la hora era 20, 20 + 6 = 26. 
-  # 26 % 24 = 2 (Es decir, las 2 de la madrugada).
-  hora_madrid = (int(proceso_mt_geotemporal) + 6) % 24  
-  
-  if hora_madrid < 12:
-    estadoDelDia = "Mañana"
-  elif hora_madrid >= 12 and hora_madrid < 18:
-    estadoDelDia = "Tarde"
-  else:
-    estadoDelDia = "Noche"
+def turing(entrada_usuario):
+    """
+    Función para la API: ejecuta la máquina de Turing y devuelve el resultado como diccionario.
+    """
+    cinta = list(entrada_usuario.upper()) + ["#"]
+    cabezal = 0
+    estado = "q_leyendo"
+    palabra_acumulada = ""
     
-  return {
-    "pais": "españa",
-    "hora": f"{hora_madrid}:00",
-    "offset": "+6 Horas",
-    "estado del dia": estadoDelDia
-  }
-
-
-def datosdeTokyo(proceso_mt_geotemporal):
-  hora_tokyo = (int(proceso_mt_geotemporal) + 14) % 24  
-  
-  if hora_tokyo < 12:
-    estadoDelDia = "Mañana"
-  elif hora_tokyo >= 12 and hora_tokyo < 18:
-    estadoDelDia = "Tarde"
-  else:
-    estadoDelDia = "Noche"
-  return {
-    "pais": "japon",
-    "hora": f"{hora_tokyo}:00",
-    "offset": "+14 Horas",
-    "estado del dia": estadoDelDia
-  }
-
-def datosdeLondres(proceso_mt_geotemporal):
-  hora_londres = (int(proceso_mt_geotemporal) + 5) % 24  
-  
-  if hora_londres < 12:
-    estadoDelDia = "Mañana"
-  elif hora_londres >= 12 and hora_londres < 18:
-    estadoDelDia = "Tarde"
-  else:
-    estadoDelDia = "Noche"
-  return {
-    "pais": "inglaterra",
-    "hora": f"{hora_londres}:00",
-    "offset": "+6 Horas",
-    "estado del dia": estadoDelDia
-  }
-
-def datosdeSidny(proceso_mt_geotemporal):
-  hora_sidny = (int(proceso_mt_geotemporal) + 15) % 24  
-  
-  if hora_sidny < 12:
-    estadoDelDia = "Mañana"
-  elif hora_sidny >= 12 and hora_sidny < 18:
-    estadoDelDia = "Tarde"
-  else:
-    estadoDelDia = "Noche"
-  return {
-    "pais": "australia",
-    "hora": f"{hora_sidny}:00",
-    "offset": "+15 Horas",
-    "estado del dia": estadoDelDia
-  }
-
-def ciudadDefinida(ciudadEntrada):
-    if ciudadEntrada == "bogota":
-        return "colombia"
-    elif ciudadEntrada == "madrid":
-        return "españa"
-    elif ciudadEntrada == "tokyo":
-        return "japon"
-    elif ciudadEntrada == "londres":
-        return "inglaterra"
-    elif ciudadEntrada == "sidny":
-        return "australia"
-    else:
-        return "Ciudad no encontrada"
-
-def horaMadrid():
-    hora_madrid = datetime.now(pytz.timezone('Europe/Madrid'))
-    return hora_madrid.strftime("%H:%M")
- # Madrid
- #cabezal [0] => d
- # lecturaDeCiudadEntrada = Mad
-def turing(ciudadEntrada, proceso_mt_geotemporal):
-    # Convertimos la lista proceso_mt_geotemporal a string para poder sumarla al string de ciudadEntrada
-    cinta = list(ciudadEntrada + str(proceso_mt_geotemporal)) + ['*'] * 12 
-    numeroDeLetrasCiudadEntrada = len(ciudadEntrada) 
-    cabezal = 0 
-    estado = "q0"
-    lecturaDeCiudadEntrada = "" # Corregido: lectroDeCabezal no estaba definido 
-
-    while cabezal < numeroDeLetrasCiudadEntrada:
-        lecturaDeCiudadEntrada += cinta[cabezal] # Agrega letra por letra de la cinta
-        cabezal += 1
-        if cabezal < len(cinta) and cinta[cabezal] == "-": # Evitar error fuera de indice
-           estado='q1'
-        elif estado =='q1':
-          return ciudadDefinida(lecturaDeCiudadEntrada)
+    while estado != "HALT":
+        simbolo_actual = cinta[cabezal]
+        
+        if simbolo_actual != "#":
+            palabra_acumulada += simbolo_actual
+            cabezal += 1
         else:
-          return "Ciudad no encontrada"
-
+            estado = "q_verificando"
             
+            if palabra_acumulada in tabla_turing:
+                datos = tabla_turing[palabra_acumulada]
+                hora_utc = datetime.now().hour
+                hora_destino = (hora_utc + datos["offset"]) % 24
+                
+                def obtener_periodo(h):
+                    if 6 <= h < 12: return "Mañana"
+                    if 12 <= h < 18: return "Tarde"
+                    return "Noche"
+                
+                return {
+                    "ciudad": palabra_acumulada,
+                    "pais": datos["pais"],
+                    "hora": f"{hora_destino}:00",
+                    "periodo": obtener_periodo(hora_destino),
+                    "offset": datos["offset"]
+                }
+            else:
+                return {"error": "Ciudad no encontrada en la base de datos"}
     
-    # Retorno simulado de respuesta
+    return {"error": "Error en la ejecución"}
 
-# Hora de la ciudad
-# Estado del dia 
-# Horas de diferencias
+# Función original para simulación en consola
+def ejecutar_maquina_turing(entrada_usuario):
+    # La CINTA contiene la palabra más un símbolo de fin (BLANK)
+    cinta = list(entrada_usuario.upper()) + ["#"]
+    cabezal = 0
+    estado = "q_leyendo"
+    palabra_acumulada = ""
+    
+    print(f"\nConfiguración inicial de la cinta: {' '.join(cinta)}")
+    print("-" * 45)
+
+    # El ciclo continúa hasta que el estado sea HALT (parada)
+    while estado != "HALT":
+        simbolo_actual = cinta[cabezal]
+        
+        # Simulación visual del cabezal
+        visualizacion = [" "] * len(cinta)
+        visualizacion[cabezal] = "^"
+        print(f"Cinta:  {' '.join(cinta)}")
+        print(f"Cabeza: {' '.join(visualizacion)} (Estado: {estado})")
+        time.sleep(0.5) # Pausa para ver el efecto de movimiento
+
+        if simbolo_actual != "#":
+            # La máquina está "escaneando" y acumulando en su memoria interna
+            palabra_acumulada += simbolo_actual
+            print(f"Acción: Leyendo '{simbolo_actual}', moviendo R (derecha)...")
+            cabezal += 1
+        else:
+            # Hemos llegado al final de la palabra (#)
+            print(f"\nAcción: Fin de palabra detectado. Verificando '{palabra_acumulada}'...")
+            estado = "q_verificando"
+            
+            if palabra_acumulada in tabla_turing:
+                datos = tabla_turing[palabra_acumulada]
+                # Cálculo de hora lógica
+                hora_utc = datetime.now().hour
+                hora_destino = (hora_utc + datos["offset"]) % 24
+                print(f"RESULTADO: Ciudad encontrada en la base de transiciones.")
+                mostrar_reporte(datos, hora_destino)
+                estado = "HALT"
+            else:
+                print("RESULTADO: Error 404 - Ciudad no definida en la tabla.")
+                estado = "HALT"
+
+def mostrar_reporte(datos, hora):
+    def obtener_periodo(h):
+        if 6 <= h < 12: return "Mañana"
+        if 12 <= h < 18: return "Tarde"
+        return "Noche"
+
+    print("\n" + "="*30)
+    print(f"   REPORTE GEOTEMPORAL")
+    print("="*30)
+    print(list(f"País:      {datos['pais']}"))
+    print(list( f"Hora:{hora}:00") )
+    print(list(f"Periodo:   {obtener_periodo(hora)}"))
+    print(f"Offset:    +{datos['offset']}h")
+    print("="*30)
 
 if __name__ == "__main__":
-    ciudadEntrada = input("Ingrese la ciudad que desea consultar: ")
-    proceso_mt_geotemporal= datetime.now().strftime("%H:%M:%S")
-    print(turing(ciudadEntrada,proceso_mt_geotemporal))
-
+    print("--- SIMULADOR DE MÁQUINA DE TURING GEOTEMPORAL ---")
+    ciudad = input("Escriba la ciudad (Bogota, Madrid, Tokyo, etc): ").strip()
+    if ciudad:
+        ejecutar_maquina_turing(ciudad)
+    else:
+        print("Entrada vacía.")

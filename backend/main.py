@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-from backend.turing import turing
+from turing import turing
 
 app = FastAPI(title="Turing Machine API")
 
