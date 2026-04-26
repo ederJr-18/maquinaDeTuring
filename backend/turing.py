@@ -11,6 +11,47 @@ tabla_turing = {
     "SIDNY": {"pais": "AUSTRALIA", "offset": 15}
 }
 
+def turing(entrada_usuario):
+    """
+    Función para la API: ejecuta la máquina de Turing y devuelve el resultado como diccionario.
+    """
+    cinta = list(entrada_usuario.upper()) + ["#"]
+    cabezal = 0
+    estado = "q_leyendo"
+    palabra_acumulada = ""
+    
+    while estado != "HALT":
+        simbolo_actual = cinta[cabezal]
+        
+        if simbolo_actual != "#":
+            palabra_acumulada += simbolo_actual
+            cabezal += 1
+        else:
+            estado = "q_verificando"
+            
+            if palabra_acumulada in tabla_turing:
+                datos = tabla_turing[palabra_acumulada]
+                hora_utc = datetime.now().hour
+                hora_destino = (hora_utc + datos["offset"]) % 24
+                
+                def obtener_periodo(h):
+                    if 6 <= h < 12: return "Mañana"
+                    if 12 <= h < 18: return "Tarde"
+                    return "Noche"
+                
+                return {
+                    "ciudad": palabra_acumulada,
+                    "pais": datos["pais"],
+                    "hora": f"{hora_destino}:00",
+                    "periodo": obtener_periodo(hora_destino),
+                    "offset": datos["offset"]
+                }
+            else:
+                return {"error": "Ciudad no encontrada en la base de datos"}
+    
+    return {"error": "Error en la ejecución"}
+
+# Función original para simulación en consola
 def ejecutar_maquina_turing(entrada_usuario):
     # La CINTA contiene la palabra más un símbolo de fin (BLANK)
     cinta = list(entrada_usuario.upper()) + ["#"]
@@ -47,7 +88,6 @@ def ejecutar_maquina_turing(entrada_usuario):
                 # Cálculo de hora lógica
                 hora_utc = datetime.now().hour
                 hora_destino = (hora_utc + datos["offset"]) % 24
-                
                 print(f"RESULTADO: Ciudad encontrada en la base de transiciones.")
                 mostrar_reporte(datos, hora_destino)
                 estado = "HALT"
